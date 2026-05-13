@@ -26,13 +26,13 @@ DEALER_PROMPT = PromptTemplate.from_template(
     "Final Answer: your reply to the player\n\n"
     "Begin!\n\n"
     "Question: {input}\n"
-    "Thought:{agent_scratchpad}"
+    "{agent_scratchpad}"
 )
 
 
 class DrawResult(NamedTuple):
-    message: str    # dealer's natural-language reply (for display)
-    card_value: int  # raw int returned by draw_card (for game state)
+    message: str             # dealer's natural-language reply (for display)
+    card_value: int | None   # None if the agent failed to draw a card
 
 
 class DealerAgent:
@@ -51,7 +51,7 @@ class DealerAgent:
     def handle_request(self, request: str) -> DrawResult:
         result = self.executor.invoke({"input": request})
 
-        card_value = 0
+        card_value: int | None = None
         for action, observation in result.get("intermediate_steps", []):
             if getattr(action, "tool", None) == "draw_card":
                 card_value = int(observation)
