@@ -3,7 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from agents.dealer_agent import DealerAgent
 from config import get_llm
-from game.rules import can_draw
+from game.rules import MAX_CARDS, can_draw
 from game.state import PlayerState
 
 
@@ -26,16 +26,17 @@ class AIPlayerAgent:
         while can_draw(player_state):
             print(f"  Hand: {player_state.cards}  |  Total: {player_state.total}")
 
-            decision = self.chain.invoke({
+            raw = self.chain.invoke({
                 "name": self.name,
                 "cards": player_state.cards,
                 "total": player_state.total,
-                "cards_left": 3 - player_state.card_count,
+                "cards_left": MAX_CARDS - player_state.card_count,
             }).strip().lower()
+            decision = raw.split()[0].strip(".,!?;:\"'()[]{}") if raw else "stand"
 
             print(f"  {self.name} decides: {decision}")
 
-            if "hit" not in decision:
+            if not decision.startswith("hit"):
                 print(f"  {self.name} stands.")
                 break
 
@@ -51,5 +52,5 @@ class AIPlayerAgent:
                 print(f"  {self.name} busts!")
                 break
 
-        if not player_state.is_bust and player_state.card_count == 3:
+        if not player_state.is_bust and player_state.card_count == MAX_CARDS:
             print(f"  {self.name} reached the card limit. Final total: {player_state.total}")

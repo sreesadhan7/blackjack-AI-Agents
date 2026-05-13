@@ -58,3 +58,4 @@ python main.py
 - Each player draws up to **3 cards**.
 - Cards are worth their face value (random 2–11).
 - Highest score **≤ 21** wins. All busts → no winner.
+- Ties go to the player who acted first (turn order: You → Alice → Bob → Carol).

@@ -35,13 +35,11 @@ def main() -> None:
         *[PlayerState(name=n) for n in AI_PLAYERS],
     ])
 
-    ai_agents = {name: AIPlayerAgent(name) for name in AI_PLAYERS}
-
     for player in game.players:
         if player.is_human:
             take_human_turn(player, dealer)
         else:
-            ai_agents[player.name].take_turn(player, dealer)
+            AIPlayerAgent(player.name).take_turn(player, dealer)
 
     winner = determine_winner(game.players)
     _print_results(game.players, winner)
