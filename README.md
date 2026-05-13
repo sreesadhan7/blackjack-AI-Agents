@@ -22,7 +22,7 @@ Players **cannot** call `draw_card` directly — all card drawing goes through t
 
 ```
 main.py                      ← game loop & results display
-config.py                    ← LLM provider (OpenAI or Anthropic)
+config.py                    ← LLM provider (OpenAI, Anthropic, or Google Gemini)
 agents/
   dealer_agent.py            ← ReAct agent with draw_card tool
   ai_player_agent.py         ← LCEL chain decides hit/stand per turn
@@ -38,20 +38,28 @@ tools/
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env        # add your API key
+cp .env.example .env        # add your API key and set LLM_PROVIDER
 python main.py
 ```
 
-## LangChain concepts used
+Supported providers (set `LLM_PROVIDER` in `.env`):
+
+| Provider | `LLM_PROVIDER` value | Model used |
+|---|---|---|
+| OpenAI | `openai` | `gpt-4o-mini` |
+| Anthropic | `anthropic` | `claude-haiku-4-5` |
+| Google Gemini | `google-genai` | `gemini-2.5-flash` |
+
+## LangChain / LangGraph concepts used
 
 | Concept | File | What it does |
 |---|---|---|
 | `@tool` | `tools/card_tools.py` | Wraps a Python function so an LLM can call it |
-| `create_react_agent` | `agents/dealer_agent.py` | ReAct loop: Thought → Action → Observation → Final Answer |
-| `AgentExecutor` | `agents/dealer_agent.py` | Runs the loop, executes tool calls, stops at Final Answer |
-| `return_intermediate_steps` | `agents/dealer_agent.py` | Exposes raw tool output so we get the int without parsing text |
+| `create_react_agent` (LangGraph) | `agents/dealer_agent.py` | ReAct loop: Thought → Action → Observation → Final Answer |
+| `ToolMessage` | `agents/dealer_agent.py` | Carries the raw tool return value (card int) back through the message chain |
 | LCEL `prompt \| llm \| parser` | `agents/ai_player_agent.py` | Chains prompt + LLM + output parser into one callable |
 | `ChatPromptTemplate` | `agents/ai_player_agent.py` | Structured system + human message prompt |
+| `StrOutputParser` | `agents/ai_player_agent.py` | Converts LLM response object to a plain string |
 
 ## Game rules
 
