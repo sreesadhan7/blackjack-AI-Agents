@@ -40,4 +40,4 @@ def take_human_turn(player_state: PlayerState, dealer: DealerAgent) -> None:
             print("  Say 'hit' / 'deal me a card' to draw, or 'stand' / 'stop' to hold.")
 
     if not player_state.is_bust and player_state.card_count == MAX_CARDS:
-        print(f"  You've used all 3 cards. Final total: {player_state.total}")
+        print(f"  You've used all {MAX_CARDS} cards. Final total: {player_state.total}")
