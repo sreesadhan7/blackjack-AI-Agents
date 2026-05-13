@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell(Get-ChildItem -Recurse d:\\\\blackjack-AI-Agents | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName)"
-    ]
-  }
-}

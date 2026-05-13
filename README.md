@@ -1,58 +1,61 @@
 # Blackjack AI Agents
 
-A command-line Blackjack simulation using LangChain AI agents.
+A command-line Blackjack simulation using LangChain AI agents (Python 3.12+).
 
-## Architecture
-
-```
-main.py                  ← game loop & orchestrator
-├── agents/
-│   ├── dealer_agent.py  ← only agent with draw_card tool (LangChain ReAct agent)
-│   ├── ai_player_agent.py  ← 3 AI players (LLM decides hit/stand, asks dealer)
-│   └── human_player.py  ← human turn via CLI input
-├── game/
-│   ├── state.py         ← PlayerState, GameState dataclasses
-│   └── rules.py         ← bust check, winner logic
-├── tools/
-│   └── card_tools.py    ← draw_card() LangChain @tool (random 2–11)
-└── config.py            ← LLM provider setup (OpenAI or Anthropic)
-```
-
-### How agents communicate
+## How it works
 
 ```
-Human / AI player
-      │  "Please draw a card for Alice"
-      ▼
-  Dealer Agent  ──uses tool──▶  draw_card("Alice")  ──▶  random int 2–11
-      │
-      ▼
-  Returns: "I drew a 7 for Alice. Her total is now 14."
+You (human)          type "hit" / "deal me a card" / "stand"
+Alice / Bob / Carol  LLM decides hit or stand each turn
+        │
+        │  natural-language request: "Please draw a card for Alice."
+        ▼
+  Dealer Agent  ── draw_card tool ──▶  random int 2–11
+        │
+        ▼
+  DrawResult(message="I drew a 7 for Alice.", card_value=7)
 ```
 
-Players **cannot** call `draw_card` directly — all card drawing goes through the dealer.
+Players **cannot** call `draw_card` directly — all card drawing goes through the dealer agent.
+
+## Project structure
+
+```
+main.py                      ← game loop & results display
+config.py                    ← LLM provider (OpenAI or Anthropic)
+agents/
+  dealer_agent.py            ← ReAct agent with draw_card tool
+  ai_player_agent.py         ← LCEL chain decides hit/stand per turn
+  human_player.py            ← CLI input with keyword matching
+game/
+  state.py                   ← PlayerState, GameState dataclasses
+  rules.py                   ← bust check, winner logic
+tools/
+  card_tools.py              ← draw_card() LangChain @tool (random 2–11)
+```
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env and add your API key
+cp .env.example .env        # add your API key
 python main.py
 ```
 
 ## LangChain concepts used
 
-| Concept | Where | What it does |
+| Concept | File | What it does |
 |---|---|---|
 | `@tool` | `tools/card_tools.py` | Wraps a Python function so an LLM can call it |
-| `create_react_agent` | `agents/dealer_agent.py` | Builds a ReAct agent (Reason → Act loop) |
-| `AgentExecutor` | `agents/dealer_agent.py` | Runs the agent loop until a final answer |
-| LCEL (`prompt \| llm`) | `agents/ai_player_agent.py` | Chains prompt + LLM into a single callable |
+| `create_react_agent` | `agents/dealer_agent.py` | ReAct loop: Thought → Action → Observation → Final Answer |
+| `AgentExecutor` | `agents/dealer_agent.py` | Runs the loop, executes tool calls, stops at Final Answer |
+| `return_intermediate_steps` | `agents/dealer_agent.py` | Exposes raw tool output so we get the int without parsing text |
+| LCEL `prompt \| llm \| parser` | `agents/ai_player_agent.py` | Chains prompt + LLM + output parser into one callable |
+| `ChatPromptTemplate` | `agents/ai_player_agent.py` | Structured system + human message prompt |
 
 ## Game rules
 
 - Each player draws up to **3 cards**.
-- Cards are worth their face value (2–11, no suits).
-- Highest score **≤ 21** wins.
-- All busts → no winner.
+- Cards are worth their face value (random 2–11).
+- Highest score **≤ 21** wins. All busts → no winner.
+- Ties go to the player who acted first (turn order: You → Alice → Bob → Carol).
